@@ -282,7 +282,7 @@ st.set_page_config(
 )
 
 # API endpoint (change this when deployed)
-API_ENDPOINT = "http://localhost:8000"
+API_ENDPOINT = "https://newssenti.onrender.com/"
 
 # App title and description
 st.title("📰 News Sentiment Analysis & TTS")

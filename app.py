@@ -262,7 +262,9 @@ st.markdown("---")
 st.markdown("**News Sentiment Analysis & TTS Application** | Developed for the assignment")
 st.markdown("Developed by [Abanindra](https://github.com/abanindra3)", unsafe_allow_html=True)
 '''
-import streamlit as st
+
+
+mport streamlit as st
 import requests
 import pandas as pd
 import json
@@ -518,6 +520,11 @@ if company_name:
                 st.markdown(f"[Read Full Article]({article['url']})")
 else:
     st.info("Please select or enter a company name and click 'Analyze News'")
+
+# Footer
+st.markdown("---")
+st.markdown("**News Sentiment Analysis & TTS Application** | Developed for the assignment")
+st.markdown("Developed by [Abanindra](https://github.com/abanindra3)", unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")

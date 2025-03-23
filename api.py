@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+'''from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
@@ -251,3 +251,154 @@ async def root():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=10000)
+'''
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional
+import uvicorn
+import io
+import json
+import time
+import logging
+from utils import NewsExtractor, SentimentAnalyzer, ComparativeAnalyzer, TextToSpeechConverter, summarizer
+from dotenv import load_dotenv
+import os
+
+#load_dotenv()
+#API_KEY = os.getenv("API_KEY")
+API_KEY = "87c655e52ea4430da0894c0a8cdef473"
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="News Sentiment & TTS API",
+    description="API for extracting, analyzing and converting news to speech",
+    version="1.0.0"
+)
+
+news_extractor = NewsExtractor(API_KEY)
+sentiment_analyzer = SentimentAnalyzer()
+comparative_analyzer = ComparativeAnalyzer()
+tts_converter = TextToSpeechConverter()
+
+analysis_cache = {}
+
+class CompanyRequest(BaseModel):
+    company_name: str = Field(..., min_length=1, max_length=100)
+    num_articles: Optional[int] = Field(10, ge=1, le=20)
+    force_refresh: Optional[bool] = Field(False)
+
+class ArticleResponse(BaseModel):
+    title: str
+    summary: str
+    sentiment: str
+    topics: List[str]
+    url: str
+    source: str
+    published_date: str
+
+class ComparisonResponse(BaseModel):
+    comparison: str
+    impact: str
+
+class SentimentDistributionResponse(BaseModel):
+    positive: int
+    negative: int
+    neutral: int
+
+class TopicOverlapResponse(BaseModel):
+    common_topics: List[str]
+    unique_topics: Dict[str, List[str]]
+
+class AnalysisResponse(BaseModel):
+    company: str
+    articles: List[ArticleResponse]
+    sentiment_distribution: Dict[str, int]
+    coverage_differences: List[Dict[str, str]]
+    topic_overlap: Dict[str, Any]
+    final_sentiment: str
+    audio_url: str
+
+@app.post("/api/analyze", response_model=AnalysisResponse)
+async def analyze_company(request: CompanyRequest, background_tasks: BackgroundTasks):
+    company_name = request.company_name
+    num_articles = request.num_articles
+
+    cache_key = f"{company_name}_{num_articles}"
+    if not request.force_refresh and cache_key in analysis_cache:
+        cache_entry = analysis_cache[cache_key]
+        if time.time() - cache_entry["timestamp"] < 3600:
+            return cache_entry["data"]
+
+    try:
+        articles = news_extractor.get_news_articles(company_name, num_articles)
+        if not articles:
+            raise HTTPException(status_code=404, detail=f"No news articles found for {company_name}")
+
+        analyzed_articles = []
+        for article in articles:
+            summary = summarizer.summarize_text(article["content"])
+            sentiment = sentiment_analyzer.analyze_sentiment(article["content"])
+            analyzed_articles.append({
+                "title": article["title"],
+                "summary": summary,
+                "sentiment": sentiment["sentiment"],
+                "topics": ["business", "news", "finance"],
+                "url": article["url"],
+                "source": article["source"],
+                "published_date": article["published_date"]
+            })
+
+        comparison = comparative_analyzer.analyze_articles(analyzed_articles)
+
+        hindi_text = tts_converter.translate_to_hindi(comparison["final_sentiment"])
+        audio_bytes = tts_converter.generate_audio(hindi_text)
+        audio_id = f"{company_name.lower().replace(' ', '_')}_{int(time.time())}"
+
+        app.state.audio_cache = getattr(app.state, "audio_cache", {})
+        app.state.audio_cache[audio_id] = audio_bytes
+
+        response_data = {
+            "company": company_name,
+            "articles": analyzed_articles,
+            "sentiment_distribution": comparison["sentiment_distribution"],
+            "coverage_differences": comparison["coverage_differences"],
+            "topic_overlap": comparison["topic_overlap"],
+            "final_sentiment": comparison["final_sentiment"],
+            "audio_url": f"/api/audio/{audio_id}"
+        }
+
+        analysis_cache[cache_key] = {"data": response_data, "timestamp": time.time()}
+        background_tasks.add_task(cleanup_old_cache)
+
+        return response_data
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error analyzing news: {str(e)}")
+
+@app.get("/api/audio/{audio_id}")
+async def get_audio(audio_id: str):
+    audio_cache = getattr(app.state, "audio_cache", {})
+    if audio_id not in audio_cache:
+        raise HTTPException(status_code=404, detail="Audio not found")
+    return StreamingResponse(io.BytesIO(audio_cache[audio_id]), media_type="audio/mp3")
+
+@app.get("/api/companies")
+async def get_common_companies():
+    return {"companies": ["Apple", "Microsoft", "Google", "Amazon", "Meta", "Tesla"]}
+
+async def cleanup_old_cache():
+    current_time = time.time()
+    keys_to_remove = [key for key, entry in analysis_cache.items() if current_time - entry["timestamp"] > 86400]
+    for key in keys_to_remove:
+        del analysis_cache[key]
+
+    audio_cache = getattr(app.state, "audio_cache", {})
+    keys_to_remove = [key for key in audio_cache if "_" in key and current_time - int(key.split("_")[-1]) > 3600]
+    for key in keys_to_remove:
+        del audio_cache[key]
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

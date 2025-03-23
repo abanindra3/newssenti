@@ -264,7 +264,7 @@ st.markdown("Developed by [Abanindra](https://github.com/abanindra3)", unsafe_al
 '''
 
 
-mport streamlit as st
+import streamlit as st
 import requests
 import pandas as pd
 import json

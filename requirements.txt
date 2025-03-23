@@ -8,6 +8,7 @@ newspaper3k==0.2.8
 pandas==2.2.0
 plotly==5.18.0
 python-dotenv
+protobuf==3.20.*
 
 # NLP and ML
 nltk==3.8.1

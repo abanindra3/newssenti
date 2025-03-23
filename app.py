@@ -31,7 +31,7 @@ and provides a comparative analysis along with a Hindi text-to-speech summary.
 
 
 # Function to fetch common companies
-@st.cache(ttl=3600)
+@st.cache_data(ttl=3600)
 def get_common_companies():
     try:
         response = requests.get(f"{API_ENDPOINT}/api/companies")

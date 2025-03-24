@@ -3,6 +3,7 @@ Overview
 This application extracts key details from multiple news articles related to a given company, performs sentiment analysis, conducts a comparative analysis, and generates a text-to-speech (TTS) output in Hindi. The tool allows users to input a company name and receive a structured sentiment report along with an audio output.
 Key Features
 
+
 📰 News Extraction: Extracts title, summary, and metadata from news articles related to a company
 📊 Sentiment Analysis: Performs sentiment analysis (positive, negative, neutral) on article content
 🔍 Comparative Analysis: Conducts comparative sentiment analysis across articles
@@ -17,30 +18,30 @@ Frontend: Streamlit-based web interface (app.py)
 Backend API: FastAPI-based RESTful API (api.py)
 Core Utilities: News extraction, sentiment analysis, and TTS conversion (utils.py)
 
-Installation and Setup
+**Installation and Setup**
 Prerequisites
 
 Python 3.8 or higher
 Internet connection for news extraction and API access
 
-Installation
+**Installation**
+**
+Clone this repository:**
+bashCopygit clone https://github.com/abanindra3/newssenti.git
 
-Clone this repository:
-bashCopygit clone https://github.com/yourusername/news-summarization-app.git
-cd news-summarization-app
 
-Create a virtual environment:
+**Create a virtual environment:**
 bashCopypython -m venv venv
 source venv/bin/activate   # On Windows: venv\Scripts\activate
 
-Install required packages:
+**Install required packages:**
 bashCopypip install -r requirements.txt
 
-Download NLTK data:
+**Download NLTK data:**
 pythonCopypython -c "import nltk; nltk.download('vader_lexicon'); nltk.download('punkt'); nltk.download('stopwords')"
 
 
-Running the Application
+**Running the Application**
 
 Start the API server:
 bashCopyuvicorn api:app --host 0.0.0.0 --port 8000 --reload
@@ -48,16 +49,16 @@ bashCopyuvicorn api:app --host 0.0.0.0 --port 8000 --reload
 In a separate terminal, start the Streamlit frontend:
 bashCopystreamlit run app.py
 
-Open your browser and navigate to:
+**Open your browser and navigate to:**
 
 Frontend UI: http://localhost:8501
 API Documentation: http://localhost:8000/docs
 
 
 
-API Usage
+**API Usage
 Core Endpoints
-
+**
 POST /api/analyze - Analyze news for a company
 jsonCopy{
   "company_name": "Tesla",
@@ -105,18 +106,20 @@ Text-to-Speech
 Translates English text to Hindi using Google Translate
 Converts Hindi text to speech using gTTS (Google Text-to-Speech)
 
-Hugging Face Space Deployment
-The application is deployed on Hugging Face Spaces and can be accessed at:
-https://huggingface.co/spaces/yourusername/news-sentiment-app
-Assumptions and Limitations
+Render Deployment
+The application is deployed on Render and can be accessed at:
+(https://newssenti-1.onrender.com)
+Due to some issues couldnt be deployed on Hugging Face, can be uploaded if necessary.
+
+**Assumptions and Limitations**
 
 News Extraction: Limited to non-JavaScript websites that can be scraped using BeautifulSoup
 Language: Primary analysis is done in English with only the final summary translated to Hindi
 API Rate Limits: May encounter rate limiting when making multiple requests to news sources
 Text-to-Speech: Quality depends on the Google TTS service
 
-Future Improvements
-
+**Future Improvements
+**
 Implement more advanced NLP techniques for better sentiment analysis
 Add support for more languages
 Improve topic extraction using named entity recognition
